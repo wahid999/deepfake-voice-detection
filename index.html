@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Fake Voice Detection System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 0;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.1rem;
+        }
+
+        .modules-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .module-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .module-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 45px rgba(0,0,0,0.15);
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .module-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 24px;
+            color: white;
+        }
+
+        .icon-detection { background: linear-gradient(135deg, #ff6b6b, #ee5a52); }
+        .icon-matcher { background: linear-gradient(135deg, #4ecdc4, #44a08d); }
+        .icon-urdu { background: linear-gradient(135deg, #feca57, #ff9ff3); }
+
+        .module-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .module-description {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .upload-section {
+            margin: 25px 0;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #34495e;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 2px;
+            margin-right: 10px;
+        }
+
+        .upload-area {
+            border: 2px dashed #bdc3c7;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: rgba(52, 152, 219, 0.05);
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #3498db;
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .upload-area.dragover {
+            border-color: #2980b9;
+            background: rgba(52, 152, 219, 0.15);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #7f8c8d;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
+        }
+
+        .record-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .record-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .record-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 25px rgba(231, 76, 60, 0.4);
+        }
+
+        .record-btn.recording {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(39, 174, 96, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
+        }
+
+        .record-status {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        .audio-player {
+            width: 100%;
+            margin: 15px 0;
+            border-radius: 10px;
+        }
+
+        .analyze-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #8e44ad, #9b59b6);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(142, 68, 173, 0.3);
+        }
+
+        .analyze-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .result-section {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 15px;
+            background: rgba(52, 73, 94, 0.05);
+            border-left: 4px solid #3498db;
+            display: none;
+        }
+
+        .result-section.show {
+            display: block;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .result-content {
+            font-size: 1rem;
+            color: #34495e;
+            line-height: 1.5;
+        }
+
+        .result-fake {
+            border-left-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .result-real {
+            border-left-color: #27ae60;
+            background: rgba(39, 174, 96, 0.1);
+        }
+
+        .result-match {
+            border-left-color: #27ae60;
+            background: rgba(39, 174, 96, 0.1);
+        }
+
+        .result-nomatch {
+            border-left-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        /* Voice Matcher Specific Styles */
+        .matcher-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            margin: 25px 0;
+        }
+
+        .matcher-input {
+            padding: 25px;
+            border: 2px solid rgba(78, 205, 196, 0.2);
+            border-radius: 20px;
+            background: rgba(78, 205, 196, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .matcher-input:hover {
+            border-color: rgba(78, 205, 196, 0.4);
+            background: rgba(78, 205, 196, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .matcher-label {
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .matcher-upload-area {
+            border: 2px dashed #4ecdc4;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: rgba(78, 205, 196, 0.05);
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .matcher-upload-area:hover {
+            border-color: #44a08d;
+            background: rgba(78, 205, 196, 0.1);
+            transform: scale(1.02);
+        }
+
+        .matcher-upload-area.dragover {
+            border-color: #44a08d;
+            background: rgba(78, 205, 196, 0.15);
+            transform: scale(1.05);
+        }
+
+        .matcher-record-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            margin-top: 15px;
+        }
+
+        .matcher-record-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .matcher-record-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 25px rgba(78, 205, 196, 0.4);
+        }
+
+        .matcher-record-btn.recording {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            animation: pulse 1.5s infinite;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .matcher-inputs {
+                flex-direction: column;
+            }
+            
+            .modules-container {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .module-card {
+                padding: 20px;
+            }
+        }
+
+        .file-info {
+            background: rgba(52, 152, 219, 0.1);
+            border: 1px solid rgba(52, 152, 219, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .file-details {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 Deep Fake Voice Detection System</h1>
+            <p>Advanced AI-powered voice authentication and analysis platform</p>
+        </div>
+
+        <div class="modules-container">
+            <!-- Module 1: Deep Fake Voice Detection -->
+            <div class="module-card">
+                <div class="module-header">
+                    <div class="module-icon icon-detection">🔍</div>
+                    <div>
+                        <div class="module-title">Voice Authenticity Detection</div>
+                        <div class="module-description">Classify voices as Real or Fake using advanced AI</div>
+                    </div>
+                </div>
+
+                <div class="upload-section">
+                    <div class="section-title">📁 Upload Audio File</div>
+                    <div class="upload-area" id="upload1">
+                        <div class="upload-icon">🎵</div>
+                        <div class="upload-text">Drag & drop audio file here or click to browse</div>
+                        <button class="upload-btn" onclick="document.getElementById('file1').click()">Choose File</button>
+                        <input type="file" id="file1" class="file-input" accept="audio/*">
+                    </div>
+                    <div class="file-info" id="fileInfo1">
+                        <div class="file-name" id="fileName1"></div>
+                        <div class="file-details" id="fileDetails1"></div>
+                    </div>
+                </div>
+
+                <div class="upload-section">
+                    <div class="section-title">🎙️ Record Audio</div>
+                    <div class="record-section">
+                        <button class="record-btn" id="recordBtn1">🎤</button>
+                        <div class="record-status" id="recordStatus1">Click to start recording</div>
+                        <audio class="audio-player" id="audioPlayer1" controls style="display:none;"></audio>
+                    </div>
+                </div>
+
+                <button class="analyze-btn" id="analyzeBtn1" disabled>🔍 Analyze Voice</button>
+                
+                <div class="loading" id="loading1">
+                    <div class="spinner"></div>
+                    <div>Analyzing voice authenticity...</div>
+                </div>
+
+                <div class="result-section" id="result1">
+                    <div class="result-title">Analysis Result:</div>
+                    <div class="result-content" id="resultContent1"></div>
+                </div>
+            </div>
+
+            <!-- Module 2: Voice Matcher -->
+            <div class="module-card">
+                <div class="module-header">
+                    <div class="module-icon icon-matcher">🔄</div>
+                    <div>
+                        <div class="module-title">Voice Matching System</div>
+                        <div class="module-description">Compare two voices to determine if they match</div>
+                    </div>
+                </div>
+
+                <div class="matcher-inputs">
+                    <div class="matcher-input">
+                        <div class="matcher-label">🎯 Voice Sample 1</div>
+                        <div class="matcher-upload-area" id="upload2a">
+                            <div class="upload-icon">🎵</div>
+                            <div class="upload-text">Upload first voice sample</div>
+                            <button class="upload-btn" onclick="document.getElementById('file2a').click()">Choose File</button>
+                            <input type="file" id="file2a" class="file-input" accept="audio/*">
+                        </div>
+                        <div class="file-info" id="fileInfo2a">
+                            <div class="file-name" id="fileName2a"></div>
+                        </div>
+                        <div class="matcher-record-section">
+                            <button class="matcher-record-btn" id="recordBtn2a">🎤</button>
+                            <div class="record-status" id="recordStatus2a">Record First Voice</div>
+                            <audio class="audio-player" id="audioPlayer2a" controls style="display:none;"></audio>
+                        </div>
+                    </div>
+
+                    <div class="matcher-input">
+                        <div class="matcher-label">🎯 Voice Sample 2</div>
+                        <div class="matcher-upload-area" id="upload2b">
+                            <div class="upload-icon">🎵</div>
+                            <div class="upload-text">Upload second voice sample</div>
+                            <button class="upload-btn" onclick="document.getElementById('file2b').click()">Choose File</button>
+                            <input type="file" id="file2b" class="file-input" accept="audio/*">
+                        </div>
+                        <div class="file-info" id="fileInfo2b">
+                            <div class="file-name" id="fileName2b"></div>
+                        </div>
+                        <div class="matcher-record-section">
+                            <button class="matcher-record-btn" id="recordBtn2b">🎤</button>
+                            <div class="record-status" id="recordStatus2b">Record Second Voice</div>
+                            <audio class="audio-player" id="audioPlayer2b" controls style="display:none;"></audio>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="analyze-btn" id="analyzeBtn2" disabled>🔄 Compare Voices</button>
+                
+                <div class="loading" id="loading2">
+                    <div class="spinner"></div>
+                    <div>Comparing voice samples...</div>
+                </div>
+
+                <div class="result-section" id="result2">
+                    <div class="result-title">Comparison Result:</div>
+                    <div class="result-content" id="resultContent2"></div>
+                </div>
+            </div>
+
+            <!-- Module 3: Urdu Voice Detection -->
+            <div class="module-card">
+                <div class="module-header">
+                    <div class="module-icon icon-urdu">🕌</div>
+                    <div>
+                        <div class="module-title">Urdu Voice Detection</div>
+                        <div class="module-description">Specialized deepfake detection for Urdu language</div>
+                    </div>
+                </div>
+
+                <div class="upload-section">
+                    <div class="section-title">📁 Upload Urdu Audio</div>
+                    <div class="upload-area" id="upload3">
+                        <div class="upload-icon">🎵</div>
+                        <div class="upload-text">Drag & drop Urdu audio file here</div>
+                        <button class="upload-btn" onclick="document.getElementById('file3').click()">Choose File</button>
+                        <input type="file" id="file3" class="file-input" accept="audio/*">
+                    </div>
+                    <div class="file-info" id="fileInfo3">
+                        <div class="file-name" id="fileName3"></div>
+                        <div class="file-details" id="fileDetails3"></div>
+                    </div>
+                </div>
+
+                <div class="upload-section">
+                    <div class="section-title">🎙️ Record Urdu Speech</div>
+                    <div class="record-section">
+                        <button class="record-btn" id="recordBtn3">🎤</button>
+                        <div class="record-status" id="recordStatus3">Click to record Urdu speech</div>
+                        <audio class="audio-player" id="audioPlayer3" controls style="display:none;"></audio>
+                    </div>
+                </div>
+
+                <button class="analyze-btn" id="analyzeBtn3" disabled>🔍 Analyze Urdu Voice</button>
+                
+                <div class="loading" id="loading3">
+                    <div class="spinner"></div>
+                    <div>Analyzing Urdu voice authenticity...</div>
+                </div>
+
+                <div class="result-section" id="result3">
+                    <div class="result-title">Analysis Result:</div>
+                    <div class="result-content" id="resultContent3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for audio recording
+        let mediaRecorder = {};
+        let audioChunks = {};
+        let isRecording = {};
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            setupFileUploads();
+            setupRecording();
+            setupAnalyzeButtons();
+        }
+
+        // File upload functionality
+        function setupFileUploads() {
+            const fileInputs = ['file1', 'file2a', 'file2b', 'file3'];
+            const uploadAreas = ['upload1', 'upload2a', 'upload2b', 'upload3'];
+
+            fileInputs.forEach((fileId, index) => {
+                const fileInput = document.getElementById(fileId);
+                const uploadArea = document.getElementById(uploadAreas[index]);
+
+                fileInput.addEventListener('change', function(e) {
+                    handleFileSelect(e, fileId);
+                });
+
+                // Drag and drop functionality
+                uploadArea.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    uploadArea.classList.add('dragover');
+                });
+
+                uploadArea.addEventListener('dragleave', function() {
+                    uploadArea.classList.remove('dragover');
+                });
+
+                uploadArea.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    uploadArea.classList.remove('dragover');
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0 && files[0].type.startsWith('audio/')) {
+                        fileInput.files = files;
+                        handleFileSelect({target: fileInput}, fileId);
+                    }
+                });
+
+                uploadArea.addEventListener('click', function() {
+                    fileInput.click();
+                });
+            });
+        }
+
+        function handleFileSelect(event, fileId) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('audio/')) {
+                const moduleNum = fileId.includes('2') ? (fileId.includes('2a') ? '2a' : '2b') : fileId.slice(-1);
+                displayFileInfo(file, moduleNum);
+                updateAnalyzeButton(getModuleNumber(fileId));
+            }
+        }
+
+        function displayFileInfo(file, moduleId) {
+            const fileInfo = document.getElementById(`fileInfo${moduleId}`);
+            const fileName = document.getElementById(`fileName${moduleId}`);
+            const fileDetails = document.getElementById(`fileDetails${moduleId}`);
+
+            fileName.textContent = file.name;
+            if (fileDetails) {
+                fileDetails.textContent = `Size: ${(file.size / 1024 / 1024).toFixed(2)} MB | Type: ${file.type}`;
+            }
+            fileInfo.classList.add('show');
+        }
+
+        // Recording functionality
+        function setupRecording() {
+            const recordButtons = ['recordBtn1', 'recordBtn2a', 'recordBtn2b', 'recordBtn3'];
+
+            recordButtons.forEach(btnId => {
+                const button = document.getElementById(btnId);
+                button.addEventListener('click', function() {
+                    toggleRecording(btnId);
+                });
+            });
+        }
+
+        async function toggleRecording(btnId) {
+            const moduleId = getModuleIdFromButton(btnId);
+
+            if (!isRecording[btnId]) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    startRecording(btnId, stream, moduleId);
+                } catch (error) {
+                    console.error('Error accessing microphone:', error);
+                    alert('Unable to access microphone. Please check permissions.');
+                }
+            } else {
+                stopRecording(btnId, moduleId);
+            }
+        }
+
+        function startRecording(btnId, stream, moduleId) {
+            const button = document.getElementById(btnId);
+            const status = document.getElementById(`recordStatus${moduleId}`);
+
+            mediaRecorder[btnId] = new MediaRecorder(stream);
+            audioChunks[btnId] = [];
+            isRecording[btnId] = true;
+
+            button.classList.add('recording');
+            button.innerHTML = '⏹️';
+            status.textContent = 'Recording... Click to stop';
+
+            mediaRecorder[btnId].ondataavailable = function(event) {
+                audioChunks[btnId].push(event.data);
+            };
+
+            mediaRecorder[btnId].onstop = function() {
+                const audioBlob = new Blob(audioChunks[btnId], { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audioPlayer = document.getElementById(`audioPlayer${moduleId}`);
+                
+                audioPlayer.src = audioUrl;
+                audioPlayer.style.display = 'block';
+                
+                updateAnalyzeButton(getModuleNumber(moduleId));
+            };
+
+            mediaRecorder[btnId].start();
+        }
+
+        function stopRecording(btnId, moduleId) {
+            const button = document.getElementById(btnId);
+            const status = document.getElementById(`recordStatus${moduleId}`);
+
+            mediaRecorder[btnId].stop();
+            mediaRecorder[btnId].stream.getTracks().forEach(track => track.stop());
+
+            isRecording[btnId] = false;
+            button.classList.remove('recording');
+            button.innerHTML = '🎤';
+            status.textContent = 'Recording complete. Click to record again';
+        }
+
+        // Helper functions
+        function getModuleIdFromButton(btnId) {
+            if (btnId === 'recordBtn1') return '1';
+            if (btnId === 'recordBtn2a') return '2a';
+            if (btnId === 'recordBtn2b') return '2b';
+            if (btnId === 'recordBtn3') return '3';
+            return '1';
+        }
+
+        function getModuleNumber(id) {
+            if (id.includes('2')) return '2';
+            if (id.includes('3')) return '3';
+            return '1';
+        }
+
+        // Analyze button functionality
+        function setupAnalyzeButtons() {
+            document.getElementById('analyzeBtn1').addEventListener('click', () => analyzeVoice('1'));
+            document.getElementById('analyzeBtn2').addEventListener('click', () => analyzeVoice('2'));
+            document.getElementById('analyzeBtn3').addEventListener('click', () => analyzeVoice('3'));
+        }
+
+        function updateAnalyzeButton(moduleNum) {
+            const analyzeBtn = document.getElementById(`analyzeBtn${moduleNum}`);
+            
+            if (moduleNum === '2') {
+                // Voice matcher needs both samples
+                const hasFile1 = document.getElementById('file2a').files.length > 0 || document.getElementById('audioPlayer2a').src;
+                const hasFile2 = document.getElementById('file2b').files.length > 0 || document.getElementById('audioPlayer2b').src;
+                analyzeBtn.disabled = !(hasFile1 && hasFile2);
+            } else {
+                // Single voice modules
+                const fileId = moduleNum === '1' ? 'file1' : 'file3';
+                const playerId = `audioPlayer${moduleNum}`;
+                const hasFile = document.getElementById(fileId).files.length > 0 || document.getElementById(playerId).src;
+                analyzeBtn.disabled = !hasFile;
+            }
+        }
+
+        // Analysis simulation
+        async function analyzeVoice(moduleNum) {
+            const loadingElement = document.getElementById(`loading${moduleNum}`);
+            const resultElement = document.getElementById(`result${moduleNum}`);
+            const resultContent = document.getElementById(`resultContent${moduleNum}`);
+            const analyzeBtn = document.getElementById(`analyzeBtn${moduleNum}`);
+
+            // Show loading
+            loadingElement.classList.add('show');
+            resultElement.classList.remove('show');
+            analyzeBtn.disabled = true;
+
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // Hide loading
+            loadingElement.classList.remove('show');
+
+            // Generate mock results
+            let result, resultClass;
+            
+            if (moduleNum === '1') {
+                // Deep fake detection
+                const isFake = Math.random() > 0.5;
+                const confidence = (Math.random() * 0.3 + 0.7) * 100;
+                result = `Voice Classification: <strong>${isFake ? 'FAKE' : 'REAL'}</strong><br>
+                         Confidence Score: ${confidence.toFixed(1)}%<br>
+                         Analysis: ${isFake ? 'Deepfake indicators detected in voice patterns' : 'Voice appears to be authentic'}`;
+                resultClass = isFake ? 'result-fake' : 'result-real';
+            } else if (moduleNum === '2') {
+                // Voice matching
+                const isMatch = Math.random() > 0.4;
+                const similarity = (Math.random() * 0.4 + 0.6) * 100;
+                result = `Voice Comparison: <strong>${isMatch ? 'MATCH' : 'NO MATCH'}</strong><br>
+                         Similarity Score: ${similarity.toFixed(1)}%<br>
+                         Analysis: ${isMatch ? 'Voice samples appear to be from the same speaker' : 'Voice samples are from different speakers'}`;
+                resultClass = isMatch ? 'result-match' : 'result-nomatch';
+            } else {
+                // Urdu deep fake detection
+                const isFake = Math.random() > 0.6;
+                const confidence = (Math.random() * 0.25 + 0.75) * 100;
+                result = `Urdu Voice Classification: <strong>${isFake ? 'FAKE' : 'REAL'}</strong><br>
+                         Confidence Score: ${confidence.toFixed(1)}%<br>
+                         Language: Urdu<br>
+                         Analysis: ${isFake ? 'Deepfake patterns detected in Urdu speech' : 'Authentic Urdu voice detected'}`;
+                resultClass = isFake ? 'result-fake' : 'result-real';
+            }
+
+            resultContent.innerHTML = result;
+            resultElement.className = `result-section show ${resultClass}`;
+            analyzeBtn.disabled = false;
+        }
+
+        // File input change listeners for analyze button updates
+        document.getElementById('file2a').addEventListener('change', () => updateAnalyzeButton('2'));
+        document.getElementById('file2b').addEventListener('change', () => updateAnalyzeButton('2'));
+    </script>
+</body>
+</html>
