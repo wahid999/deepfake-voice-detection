@@ -51,3 +51,9 @@ deepfake-voice-detection/
 ├── app.py
 ├── requirements.txt
 └── README.md
+
+Author
+
+Wahid Hussain
+MSc Computer Science
+Anglia Ruskin University, United Kingdom
