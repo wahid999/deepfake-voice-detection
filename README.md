@@ -52,7 +52,7 @@ deepfake-voice-detection/
 ├── requirements.txt
 └── README.md
 
-Author
+## Author
 
 Wahid Hussain
 MSc Computer Science
